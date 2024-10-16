@@ -2,7 +2,6 @@ import os
 from yt_dlp import YoutubeDL
 from PIL import Image
 from mutagen.id3 import ID3, APIC
-from datetime import datetime
 
 
 def convert_thumbnail(webp_path, convert_path):
