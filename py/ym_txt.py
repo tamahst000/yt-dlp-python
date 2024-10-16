@@ -4,13 +4,12 @@ from PIL import Image
 from mutagen.id3 import ID3, APIC
 
 
-def crop_thumbnail(webp_path, before_path, after_path):
+def crop_thumbnail(webp_path, crop_path):
     if not os.path.exists(webp_path):
         print("----- ERROR : 画像ファイルが見つかりません。")
         return
 
-    os.rename(webp_path, before_path)
-    with Image.open(before_path) as img:
+    with Image.open(webp_path) as img:
         img_width, img_height = img.size
         target_width, target_height = img_height, img_height
 
@@ -20,8 +19,8 @@ def crop_thumbnail(webp_path, before_path, after_path):
         lower = upper + target_height
 
         cropped_img = img.crop((left, upper, right, lower))
-        cropped_img.save(after_path)
-    os.remove(before_path)
+        cropped_img.save(crop_path)
+    os.remove(webp_path)
     print("----- Thumbnail crop completed!")
 
 
@@ -41,6 +40,7 @@ def embed_image_in_mp3(audio_path, img_path):
             )
         )
     tags.save()
+    os.remove(img_path)
     print("----- Thumbnail embedding completed!")
 
 
@@ -72,6 +72,10 @@ with open(r".\\url.txt", "r", encoding="utf_8") as f:
             break
 
 for inURL in url_list:
+    if "music" in inURL:
+        inURL = inURL.replace("music.", "")
+        inURL = inURL.split("&si=")[0]
+
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(inURL, download=True)
         filename = ydl.prepare_filename(info)
@@ -79,11 +83,8 @@ for inURL in url_list:
     print(f"----- Converting {filename_base}...")
 
     thumbnail_webp_path = os.path.join(output_dir, f"{filename_base}.webp")
-    thumbnail_before_path = os.path.join(output_dir, "thumbnail_before.jpg")
-    thumbnail_after_path = os.path.join(output_dir, "thumbnail_after.jpg")
-    crop_thumbnail(thumbnail_webp_path, thumbnail_before_path, thumbnail_after_path)
+    thumbnail_crop_path = os.path.join(output_dir, "thumbnail_convert.jpg")
+    crop_thumbnail(thumbnail_webp_path, thumbnail_crop_path)
 
     audio_path = os.path.join(output_dir, f"{filename_base}.mp3")
-    embed_image_in_mp3(audio_path, thumbnail_after_path)
-
-    os.remove(os.path.join(output_dir, "thumbnail_after.jpg"))
+    embed_image_in_mp3(audio_path, thumbnail_crop_path)
