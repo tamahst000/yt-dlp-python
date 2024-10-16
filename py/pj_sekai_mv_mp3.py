@@ -1,71 +1,76 @@
-#サムネイルをアートワークにしてmp3保存(YYYYMMDD title.mp3)
-
-import subprocess
-from PIL import Image
 import os
-import re
+from yt_dlp import YoutubeDL
+from PIL import Image
+from mutagen.id3 import ID3, APIC
+from datetime import datetime
 
-#txtからurlを取得
-urllist = []
+
+def convert_thumbnail(webp_path, convert_path):
+    if not os.path.exists(webp_path):
+        print("----- ERROR : 画像ファイルが見つかりません。")
+        return
+    with Image.open(webp_path) as img:
+        img.save(convert_path)
+    os.remove(webp_path)
+    print("----- Thumbnail convert completed!")
+
+
+def embed_image_in_mp3(audio_path, img_path):
+    if not os.path.exists(audio_path):
+        print("----- ERROR : 音楽ファイルが見つかりません。")
+        return
+
+    tags = ID3(audio_path)
+    with open(img_path, "rb") as img_file:
+        tags.add(
+            APIC(
+                mime="image/jpeg",
+                type=3,
+                desc="Cover",
+                data=img_file.read(),
+            )
+        )
+    tags.save()
+    os.remove(img_path)
+    print("----- Thumbnail embedding completed!")
+
+
+cookies_file = "cookies.txt"
+output_dir = "yt-dlp"
+ydl_opts = {
+    "cookiefile": cookies_file,
+    "format": "best",
+    "outtmpl": f"{output_dir}/%(upload_date)s %(title)s.%(ext)s",
+    "writethumbnail": True,
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        }
+    ],
+}
+
+url_list = []
 with open(r".\\url.txt", "r", encoding="utf_8") as f:
     while True:
-        line=f.read()
-        script_line=line.split("\n")
+        line = f.read()
+        script_line = line.split("\n")
         for t in script_line:
             if "http" in t:
-                urllist.append(t)
+                url_list.append(t)
         else:
             break
 
-for inURL in urllist:
-    try:
-        #アップロード日 タイトルを取得
-        cmd0 =f'yt-dlp {inURL} --print "%(upload_date)s %(title)s"'
-        datatitle=subprocess.run(cmd0, shell=True, stdout = subprocess.PIPE,encoding='shift-jis')
-        datatitle=str(datatitle.stdout)
-        print(datatitle)
+for inURL in url_list:
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(inURL, download=True)
+        filename = ydl.prepare_filename(info)
+    filename_base = os.path.splitext(os.path.basename(filename))[0]
 
-        #タイトルを取得
-        cmd1 =f'yt-dlp {inURL} --print "%(title)s"'
-        fn=subprocess.run(cmd1, shell=True, stdout = subprocess.PIPE,encoding='shift-jis')
-        fn=str(fn.stdout)
-        fn=fn.replace("\n","")
-        #idを取得
-        cmd1 =f"yt-dlp {inURL} --cookies cookies.txt --get-id"
-        id=subprocess.run(cmd1, shell=True, stdout = subprocess.PIPE,encoding='shift-jis')
-        id=str(id.stdout)
-        id=id.replace("\n","")
-        #スラッシュを変換してファイル名取得
-        fn=fn.replace("/","⧸")
-        filename=f"{fn} [{id}]"
-        print(filename)
+    thumbnail_webp_path = os.path.join(output_dir, f"{filename_base}.webp")
+    thumbnail_path = os.path.join(output_dir, "thumbnail_convert.jpg")
+    convert_thumbnail(thumbnail_webp_path, thumbnail_path)
 
-        #音声とサムネイルをDL
-        cmd2 =f"yt-dlp {inURL} --cookies cookies.txt -x --audio-format mp3 -P ./yt-dlp --write-thumbnail --convert-thumbnails jpg"
-        subprocess.run(cmd2, shell=True, stdout = subprocess.PIPE)
-
-        #mp3にサムネを合体
-        os.rename(f"yt-dlp/{filename}.jpg", "yt-dlp/in.jpg")
-        os.rename(f"yt-dlp/{filename}.mp3", "yt-dlp/in.mp3")
-        cmd4 =f'ffmpeg -i yt-dlp\\in.mp3 -i yt-dlp\\in.jpg -map 0:a -map 1:v -c copy -disposition:1 attached_pic -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" yt-dlp\\out.mp3'
-        subprocess.run(cmd4, shell=True, stdout = subprocess.PIPE)
-
-        #不要なファイルを消去
-        os.remove("yt-dlp/in.mp3")
-        os.remove("yt-dlp/in.jpg")
-
-        #ファイル名に使用出来ない文字を変換
-        datatitle=re.sub(r'[\\|/|:|?|.|"|<|>|\|]','-',datatitle)
-        datatitle=datatitle.replace("\n","")
-        print(f"{datatitle}.mp3")
-        os.rename(f"yt-dlp/out.mp3", f"yt-dlp/{datatitle}.mp3")
-
-
-    except:#ファイル名が特殊でエラーが起きる場合
-        error=input("エラー:mp3とjpgのファイル名を「in」に変更してください(変更したらエンター)")
-
-        cmd4 =f'ffmpeg -i yt-dlp\\in.mp3 -i yt-dlp\\in.jpg -map 0:a -map 1:v -c copy -disposition:1 attached_pic -id3v2_version 3 -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" yt-dlp\\out.mp3'
-        subprocess.run(cmd4, shell=True, stdout = subprocess.PIPE)
-
-        os.remove("yt-dlp/in.mp3")
-        os.remove("yt-dlp/in.jpg")
+    audio_path = os.path.join(output_dir, f"{filename_base}.mp3")
+    embed_image_in_mp3(audio_path, thumbnail_path)
