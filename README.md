@@ -8,7 +8,7 @@
 
 ### cokkies.txt の保存
 
-※Youtube Premium に加入している場合のみ行う
+※Youtube Premium に加入している場合は行った方が良い
 
 まず、Cookie をテキストファイルとして取り出すために、ブラウザの拡張機能をインストールする。
 
@@ -21,7 +21,7 @@ Firefox の場合：[cookies.txt](https://addons.mozilla.org/en-US/firefox/addon
 
 既に同じ名前のファイルが存在する場合は上書きする
 
-### ※上手くダウンロードできない場合
+## ※上手く動画保存できない場合
 
 yt-dlp のアップデート行うと大体うまくいく
 
