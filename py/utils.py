@@ -2,6 +2,57 @@ import os
 import re
 from PIL import Image
 from mutagen.id3 import ID3, APIC
+from yt_dlp import YoutubeDL
+
+
+def _extract_url_list_from_playlist(playlist_url):
+    ydl_opts = {
+        "extract_flat": True,
+        "force_generic_extractor": True,
+    }
+    url_list = []
+    with YoutubeDL(ydl_opts) as ydl:
+        playlist_info = ydl.extract_info(playlist_url, download=False)
+        for entry in playlist_info["entries"]:
+            video_id = entry["id"]
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            url_list.append(video_url)
+    return url_list
+
+
+def convert_from_inURL_to_url_list():
+    inURL = input("URL:")
+    if "music" in inURL:
+        inURL = inURL.replace("music.", "")
+        inURL = inURL.split("&si=")[0]
+    if "playlist" in inURL:
+        url_list = _extract_url_list_from_playlist(inURL)
+    else:
+        url_list = [inURL]
+    return url_list
+
+
+def convert_from_txt_to_url_list():
+    url_list = []
+    with open(r".\\url.txt", "r", encoding="utf_8") as f:
+        while True:
+            line = f.read()
+            script_line = line.split("\n")
+            for t in script_line:
+                if "http" in t:
+                    url_list.append(t)
+            else:
+                break
+    return url_list
+
+
+def download_video_and_get_filename_from_youtubedl(ydl_opts, url):
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        filename = ydl.prepare_filename(info)
+    filename_base = os.path.splitext(os.path.basename(filename))[0]
+    print(f"----- Converting {filename_base}...")
+    return filename_base
 
 
 def crop_thumbnail(webp_path, crop_path):
@@ -24,11 +75,20 @@ def crop_thumbnail(webp_path, crop_path):
     print("----- Thumbnail crop completed!")
 
 
+def convert_thumbnail(webp_path, convert_path):
+    if not os.path.exists(webp_path):
+        print("----- ERROR : 画像ファイルが見つかりません。")
+        return
+    with Image.open(webp_path) as img:
+        img.save(convert_path)
+    os.remove(webp_path)
+    print("----- Thumbnail convert completed!")
+
+
 def embed_image_in_mp3(audio_path, img_path):
     if not os.path.exists(audio_path):
         print("----- ERROR : 音楽ファイルが見つかりません。")
         return
-
     tags = ID3(audio_path)
     with open(img_path, "rb") as img_file:
         tags.add(
@@ -44,36 +104,12 @@ def embed_image_in_mp3(audio_path, img_path):
     print("----- Thumbnail embedding completed!")
 
 
-def convert_thumbnail(webp_path, convert_path):
-    if not os.path.exists(webp_path):
-        print("----- ERROR : 画像ファイルが見つかりません。")
-        return
-    with Image.open(webp_path) as img:
-        img.save(convert_path)
-    os.remove(webp_path)
-    print("----- Thumbnail convert completed!")
-
-
-def sanitize_filename(filename_base):
+def sanitize_filename(filename_base, output_dir, audio_path):
     invalid_chars = r'[<>:"/\\|?*⧸♥♡]'
     replacement_char = " "
     sanitized_filename = re.sub(invalid_chars, replacement_char, filename_base)
-
-    change = False
     if sanitized_filename != filename_base:
-        change = True
-    return sanitized_filename, change
-
-
-def get_url_list():
-    url_list = []
-    with open(r".\\url.txt", "r", encoding="utf_8") as f:
-        while True:
-            line = f.read()
-            script_line = line.split("\n")
-            for t in script_line:
-                if "http" in t:
-                    url_list.append(t)
-            else:
-                break
-    return url_list
+        new_audio_path = os.path.join(output_dir, f"{sanitized_filename}.mp3")
+        os.rename(audio_path, new_audio_path)
+        print("-----Update filename!")
+    return sanitized_filename

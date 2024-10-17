@@ -1,7 +1,12 @@
 import os
-from yt_dlp import YoutubeDL
 
-from utils import get_url_list, convert_thumbnail, embed_image_in_mp3, sanitize_filename
+from utils import (
+    convert_from_inURL_to_url_list,
+    download_video_and_get_filename_from_youtubedl,
+    convert_thumbnail,
+    embed_image_in_mp3,
+    sanitize_filename,
+)
 
 cookies_file = "cookies.txt"
 output_dir = "yt-dlp"
@@ -19,23 +24,21 @@ ydl_opts = {
     ],
 }
 
-url_list = get_url_list()
+url_list = convert_from_inURL_to_url_list()
 
-for inURL in url_list:
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(inURL, download=True)
-        filename = ydl.prepare_filename(info)
-    filename_base = os.path.splitext(os.path.basename(filename))[0]
+for url in url_list:
+    filename_base = download_video_and_get_filename_from_youtubedl(ydl_opts, url)
 
     thumbnail_webp_path = os.path.join(output_dir, f"{filename_base}.webp")
-    thumbnail_path = os.path.join(output_dir, "thumbnail_convert.jpg")
-    convert_thumbnail(thumbnail_webp_path, thumbnail_path)
-
     audio_path = os.path.join(output_dir, f"{filename_base}.mp3")
-    embed_image_in_mp3(audio_path, thumbnail_path)
+    thumbnail_crop_path = os.path.join(output_dir, "thumbnail_convert.jpg")
 
-    sanitized_filename, change = sanitize_filename(filename_base)
-    if change:
-        new_audio_path = os.path.join(output_dir, f"{sanitized_filename}.mp3")
-        os.rename(audio_path, new_audio_path)
-        print("-----Update filename!")
+    convert_thumbnail(thumbnail_webp_path, thumbnail_crop_path)
+
+    try:
+        embed_image_in_mp3(audio_path, thumbnail_crop_path)
+        sanitize_filename(filename_base, output_dir, audio_path)
+
+    except FileExistsError:
+        print("----- ERROR : 同じ名前のファイルが既に存在しています")
+        continue
