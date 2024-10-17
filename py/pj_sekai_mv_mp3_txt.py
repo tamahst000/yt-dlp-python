@@ -8,7 +8,7 @@ from utils import (
     sanitize_filename,
 )
 
-cookies_file = "cookies.txt"
+cookies_file = "py/cookies.txt"
 output_dir = "yt-dlp"
 ydl_opts = {
     "cookiefile": cookies_file,
