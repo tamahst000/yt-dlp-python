@@ -21,19 +21,7 @@ def _extract_url_list_from_playlist(playlist_url):
     return url_list
 
 
-def convert_from_inURL_to_url_list():
-    inURL = input("URL:")
-    if "music" in inURL:
-        inURL = inURL.replace("music.", "")
-        inURL = inURL.split("&si=")[0]
-    if "playlist" in inURL:
-        url_list = _extract_url_list_from_playlist(inURL)
-    else:
-        url_list = [inURL]
-    return url_list
-
-
-def convert_from_txt_to_url_list():
+def _convert_from_txt_to_url_list():
     url_list = []
     with open(r".\\url.txt", "r", encoding="utf_8") as f:
         while True:
@@ -44,6 +32,24 @@ def convert_from_txt_to_url_list():
                     url_list.append(t)
             else:
                 break
+    return url_list
+
+
+def convert_from_inURL_to_url_list():
+    inURL = input("URL:")
+
+    if not inURL:
+        print("url.txt を読み込みます...")
+        return _convert_from_txt_to_url_list()
+
+    if "music" in inURL:
+        inURL = inURL.replace("music.", "")
+        inURL = inURL.split("&si=")[0]
+
+    if "playlist" in inURL:
+        url_list = _extract_url_list_from_playlist(inURL)
+    else:
+        url_list = [inURL]
     return url_list
 
 
