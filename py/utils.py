@@ -3,6 +3,7 @@ import re
 from PIL import Image
 from mutagen.id3 import ID3, APIC
 from yt_dlp import YoutubeDL
+import subprocess
 
 
 def _extract_url_list_from_playlist(playlist_url):
@@ -46,7 +47,7 @@ def convert_from_txt_to_url_list():
     return url_list
 
 
-def download_video_and_get_filename_from_youtubedl(ydl_opts, url):
+def download_from_youtubedl(ydl_opts, url):
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         filename = ydl.prepare_filename(info)
@@ -113,3 +114,11 @@ def sanitize_filename(filename_base, output_dir, audio_path):
         os.rename(audio_path, new_audio_path)
         print("-----Update filename!")
     return sanitized_filename
+
+
+def run_subprocess(cmd):
+    try:
+        subprocess.run(cmd, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False

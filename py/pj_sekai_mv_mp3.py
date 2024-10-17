@@ -2,7 +2,7 @@ import os
 
 from utils import (
     convert_from_inURL_to_url_list,
-    download_mp3_webp_and_get_filename_from_youtubedl,
+    download_from_youtubedl,
     convert_thumbnail,
     embed_image_in_mp3,
     sanitize_filename,
@@ -27,16 +27,16 @@ ydl_opts = {
 url_list = convert_from_inURL_to_url_list()
 
 for url in url_list:
-    filename_base = download_mp3_webp_and_get_filename_from_youtubedl(ydl_opts, url)
+    filename_base = download_from_youtubedl(ydl_opts, url)
 
     thumbnail_webp_path = os.path.join(output_dir, f"{filename_base}.webp")
     audio_path = os.path.join(output_dir, f"{filename_base}.mp3")
-    thumbnail_crop_path = os.path.join(output_dir, "thumbnail_convert.jpg")
+    thumbnail_convert_path = os.path.join(output_dir, "thumbnail_convert.jpg")
 
-    convert_thumbnail(thumbnail_webp_path, thumbnail_crop_path)
+    convert_thumbnail(thumbnail_webp_path, thumbnail_convert_path)
 
     try:
-        embed_image_in_mp3(audio_path, thumbnail_crop_path)
+        embed_image_in_mp3(audio_path, thumbnail_convert_path)
         sanitize_filename(filename_base, output_dir, audio_path)
 
     except FileExistsError:
