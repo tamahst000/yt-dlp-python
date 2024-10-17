@@ -2,7 +2,7 @@ import os
 
 from utils import (
     convert_from_inURL_to_url_list,
-    download_video_and_get_filename_from_youtubedl,
+    download_mp3_webp_and_get_filename_from_youtubedl,
     crop_thumbnail,
     embed_image_in_mp3,
     sanitize_filename,
@@ -27,7 +27,7 @@ ydl_opts = {
 url_list = convert_from_inURL_to_url_list()
 
 for url in url_list:
-    filename_base = download_video_and_get_filename_from_youtubedl(ydl_opts, url)
+    filename_base = download_mp3_webp_and_get_filename_from_youtubedl(ydl_opts, url)
 
     thumbnail_webp_path = os.path.join(output_dir, f"{filename_base}.webp")
     audio_path = os.path.join(output_dir, f"{filename_base}.mp3")
