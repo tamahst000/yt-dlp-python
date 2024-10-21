@@ -3,7 +3,9 @@ import re
 from PIL import Image
 from mutagen.id3 import ID3, APIC
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import DownloadError
 import subprocess
+import ffmpeg
 
 
 def _extract_url_list_from_playlist(playlist_url):
@@ -54,12 +56,15 @@ def convert_from_inURL_to_url_list():
 
 
 def download_from_youtubedl(ydl_opts, url):
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)
-    filename_base = os.path.splitext(os.path.basename(filename))[0]
-    print(f"----- Converting {filename_base}...")
-    return filename_base
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+        filename_base = os.path.splitext(os.path.basename(filename))[0]
+        print(f"----- Converting {filename_base}...")
+        return filename_base
+    except DownloadError as e:
+        return None
 
 
 def crop_thumbnail(webp_path, crop_path):
@@ -108,6 +113,29 @@ def embed_image_in_mp3(audio_path, img_path):
         )
     tags.save()
     os.remove(img_path)
+    print("----- Thumbnail embedding completed!")
+
+
+def embed_image_in_mp4(video_path, img_path, tmp_video_path):
+    video = ffmpeg.input(video_path)
+    cover = ffmpeg.input(img_path)
+    (
+        ffmpeg.output(
+            video,
+            cover,
+            tmp_video_path,
+            c="copy",
+            **{"c:v:1": "mjpeg"},
+            **{"disposition:v:1": "attached_pic"},
+        )
+        .global_args("-map", "0")
+        .global_args("-map", "1")
+        .global_args("-loglevel", "error")
+        .run(overwrite_output=True)
+    )
+    os.remove(img_path)
+    os.remove(video_path)
+    os.rename(tmp_video_path, video_path)
     print("----- Thumbnail embedding completed!")
 
 
