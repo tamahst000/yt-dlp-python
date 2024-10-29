@@ -41,9 +41,12 @@ Firefox の場合：[cookies.txt](https://addons.mozilla.org/en-US/firefox/addon
 - Youtube
   - 再生リストの URL にも対応
 - Tver
-- Twitter
-- Abema
+- X(Twitter)
+- ABEMA
+- niconico
+- TikTok
 - bilibili
+- Dailymotion
 
 ### youtube music 保存
 
