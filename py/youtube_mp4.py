@@ -10,7 +10,7 @@ from utils import (
 cookies_file = "py/cookies.txt"
 output_dir = "yt-dlp"
 ydl_opts = {
-    "cookiefile": "cookies.txt",
+    "cookiefile": cookies_file,
     "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
     "outtmpl": "yt-dlp/%(upload_date)s %(title)s.%(ext)s",
     "writethumbnail": "true",
