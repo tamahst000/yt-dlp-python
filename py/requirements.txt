@@ -1,4 +1,4 @@
 Pillow
 mutagen
 yt-dlp
-
+ffmpeg
