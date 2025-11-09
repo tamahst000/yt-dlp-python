@@ -1,4 +1,5 @@
 Pillow
 mutagen
 yt-dlp
-ffmpeg
+ffmpeg-python
+certifi
